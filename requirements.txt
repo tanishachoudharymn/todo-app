@@ -2,3 +2,5 @@ streamlit
 flask
 requests
 gunicorn
+Flask PyJWT
+Werkzeug
