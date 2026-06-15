@@ -66,14 +66,40 @@ def login():
     )
 
     return jsonify({"token": token})
-    
+    def get_current_user():
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header:
+        return None
+
+    try:
+        token = auth_header.replace("Bearer ", "")
+
+        data = jwt.decode(
+            token,
+            app.config["SECRET_KEY"],
+            algorithms=["HS256"]
+        )
+
+        return data["user_id"]
+
+    except:
+        return None
 @app.route("/tasks", methods=["GET"])
 def get_tasks():
     conn = get_conn()
-    tasks = conn.execute("SELECT * FROM tasks").fetchall()
+   user_id = get_current_user()
+
+if not user_id:
+    return jsonify({"error": "Unauthorized"}), 401
+
+tasks = conn.execute(
+    "SELECT * FROM tasks WHERE user_id = ?",
+    (user_id,)
+).fetchall()
     conn.close()
     task_list = [
-        {"id": t[0], "task": t[1], "done": t[2], "due_date": t[3]}
+        {"id": t[0], "task": t[2], "done": t[3], "due_date": t[4]}
         for t in tasks
     ]
     return jsonify(task_list)
@@ -83,11 +109,18 @@ def add_task():
     data = request.json
     task_text = data["task"]
     due_date = data.get("due_date", None)
+    user_id = get_current_user()
+
+if not user_id:
+    return jsonify({"error": "Unauthorized"}), 401
     conn = get_conn()
-    conn.execute(
-        "INSERT INTO tasks (task, due_date) VALUES (?, ?)",
-        (task_text, due_date)
-    )
+   conn.execute(
+    """
+    INSERT INTO tasks (user_id, task, due_date)
+    VALUES (?, ?, ?)
+    """,
+    (user_id, task_text, due_date)
+)
     conn.commit()
     conn.close()
     return jsonify({"message": "Task added!"})
