@@ -6,11 +6,67 @@ from database import init_db
 import sqlite3
 
 app = Flask(__name__)
+app.config["SECRET_KEY"] = "tanisha-super-secret-key-2026"
 init_db()
 
 def get_conn():
     return sqlite3.connect("tasks.db")
+@app.route("/register", methods=["POST"])
+def register():
+    data = request.json
 
+    username = data["username"]
+    password = generate_password_hash(data["password"])
+
+    conn = get_conn()
+
+    try:
+        conn.execute(
+            "INSERT INTO users (username, password) VALUES (?, ?)",
+            (username, password)
+        )
+        conn.commit()
+
+    except sqlite3.IntegrityError:
+        conn.close()
+        return jsonify({"error": "Username already exists"}), 400
+
+    conn.close()
+
+    return jsonify({"message": "Registration successful"})
+    @app.route("/login", methods=["POST"])
+def login():
+    data = request.json
+
+    username = data["username"]
+    password = data["password"]
+
+    conn = get_conn()
+
+    user = conn.execute(
+        "SELECT * FROM users WHERE username = ?",
+        (username,)
+    ).fetchone()
+
+    conn.close()
+
+    if not user:
+        return jsonify({"error": "Invalid username or password"}), 401
+
+    if not check_password_hash(user[2], password):
+        return jsonify({"error": "Invalid username or password"}), 401
+
+    token = jwt.encode(
+        {
+            "user_id": user[0],
+            "exp": datetime.datetime.utcnow() + datetime.timedelta(days=1)
+        },
+        app.config["SECRET_KEY"],
+        algorithm="HS256"
+    )
+
+    return jsonify({"token": token})
+    
 @app.route("/tasks", methods=["GET"])
 def get_tasks():
     conn = get_conn()
