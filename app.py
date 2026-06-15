@@ -1,3 +1,6 @@
+from werkzeug.security import generate_password_hash, check_password_hash
+import jwt
+import datetime
 from flask import Flask, jsonify, request
 from database import init_db
 import sqlite3
