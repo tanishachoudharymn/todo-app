@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 from datetime import date
 
-API = "http://localhost:5000"
+API = "https://todo-app-4-1yfe.onrender.com"
 
 st.set_page_config(page_title="My To-Do List", page_icon="✨")
 
