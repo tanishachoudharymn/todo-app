@@ -33,8 +33,9 @@ def register():
 
     conn.close()
 
-    return jsonify({"message": "Registration successful"})
-    @app.route("/login", methods=["POST"])
+   return jsonify({"message": "Registration successful"})
+
+@app.route("/login", methods=["POST"])
 def login():
     data = request.json
 
@@ -66,7 +67,8 @@ def login():
     )
 
     return jsonify({"token": token})
-    def get_current_user():
+
+def get_current_user():
     auth_header = request.headers.get("Authorization")
 
     if not auth_header:
@@ -87,10 +89,28 @@ def login():
         return None
 @app.route("/tasks", methods=["GET"])
 def get_tasks():
+    @app.route("/tasks", methods=["GET"])
+def get_tasks():
     conn = get_conn()
-   user_id = get_current_user()
 
-if not user_id:
+    user_id = get_current_user()
+
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    tasks = conn.execute(
+        "SELECT * FROM tasks WHERE user_id = ?",
+        (user_id,)
+    ).fetchall()
+
+    conn.close()
+
+    task_list = [
+        {"id": t[0], "task": t[2], "done": t[3], "due_date": t[4]}
+        for t in tasks
+    ]
+
+    return jsonify(task_list)
     return jsonify({"error": "Unauthorized"}), 401
 
 tasks = conn.execute(
